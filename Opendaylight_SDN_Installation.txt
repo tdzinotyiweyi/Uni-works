@@ -1,0 +1,121 @@
+Takunda Dzino - Technical Specialist - Notes
+
+first capture: only connecting mininet to SDN
+second capture: pinging all 
+Third capture with openflow13 switch
+
+#################################
+First: disable ipv6
+
+sudo gedit /etc/sysctl.conf
+
+net.ipv6.conf.all.disable_ipv6 = 1
+
+net.ipv6.conf.default.disable_ipv6 = 1
+
+net.ipv6.conf.lo.disable_ipv6 = 1
+
+sudo sysctl -p
+
+cat /proc/sys/net/ipv6/conf/all/disable_ipv6 #if it is 1 means disabled
+
+$$$install opendaylight
+
+sudo apt-get update
+
+sudo apt-get -y install unzip vim wget
+
+sudo apt-get -y install openjdk-8-jre
+
+sudo update-alternatives --config java  #notes: set java to 8 by choosing from options
+
+echo 'export JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64/jre' >> ~/.bashrc
+
+source ~/.bashrc
+
+echo $JAVA_HOME $to ensure
+
+wget https://nexus.opendaylight.org/content/repositories/opendaylight.release/org/opendaylight/integration/karaf/0.8.4/karaf-0.8.4.zip
+
+sudo mkdir /usr/local/karaf
+
+sudo mv karaf-0.8.4.zip /usr/local/karaf
+
+sudo unzip /usr/local/karaf/karaf-0.8.4.zip -d /usr/local/karaf/
+
+sudo update-alternatives --install /usr/bin/karaf karaf /usr/local/karaf/karaf-0.8.4/bin/karaf 1
+
+sudo update-alternatives --config karaf
+
+sudo -E karaf
+
+From opendaylight terminal,
+
+feature:install odl-l2switch-switch-ui
+
+shutdown 
+
+$$back to the terminal 
+sudo update-alternatives --install /usr/bin/stop stop /usr/local/karaf/karaf-0.8.4/bin/stop 1
+
+sudo update-alternatives --config stop
+
+sudo vim /etc/systemd/system/opendaylight.service
+
+[Unit]
+Description=OpenDaylight Controller
+After=network.target
+
+[Service]
+Type=simple
+User=root
+Group=root
+Environment="JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64/jre"
+ExecStart=/usr/bin/karaf server
+ExecStop=/usr/bin/stop
+Restart=on-failure
+RestartSec=60s
+
+[Install]
+WantedBy=multi-user.target
+
+to save and exit: esc-key + !wq
+
+sudo chmod 0644 /etc/systemd/system/opendaylight.service
+
+systemctl daemon-reload
+
+sudo systemctl enable opendaylight.service
+
+sudo systemctl start opendaylight
+
+
+check listen port 
+
+sudo netstat -plnt
+
+if error karaf: There is a Root instance already running with name root and pid .....
+solution: Open KARAF_HOME\instances\instance.properties file and then Set item.0.pid=0
+
+
+apps to install
+feature:install odl-restconf-all odl-l2switch-switch odl-mdsal-all features-dlux features-dluxapps
+
+"feature:install odl:dlux:all" and  
+"feature:install odl-restconf odl-l2switch-switch odl-mdsal-apidocs odl-dlux-core"
+
+check listen port
+sudo netstat -an | grep your_ip
+
+
+
+
+
+
+
+
+
+next steps to do:
+connect mininet using: sudo mn --topo single,3 --mac --switch ovsk --controller remote,ip=ip's
+to check dpid: sudo ovs-ofctl show s1 
+check this video for opestack installation:https://www.youtube.com/watch?v=AjayJgvLYKs
